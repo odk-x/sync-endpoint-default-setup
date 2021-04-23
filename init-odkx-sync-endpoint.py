@@ -83,15 +83,19 @@ def run_interactive_config():
         if proceed.strip().lower()[0] != "y":
             print("Re-run this script once the domain is ready!")
             exit(1)
+        
+        manual_certificate = print("Do you wish to supply your own ssl certificate? [(Y)/n]")
+        if manual_certificate== "":
+            manual_certificate = "n"
 
-        os.system("sudo certbot certonly --standalone \
-          --email {} \
-          -d {} \
-          --rsa-key-size 4096 \
-          --agree-tos \
-          --cert-name bootstrap \
-          --keep-until-expiring \
-          --non-interactive".format(email, domain))
+                os.system("sudo certbot certonly --standalone \
+                  --email {} \
+                  -d {} \
+                  --rsa-key-size 4096 \
+                  --agree-tos \
+                  --cert-name bootstrap \
+                  --keep-until-expiring \
+                  --non-interactive".format(email, domain))
 
         print("Attempting to save updated https configuration")
         write_to_env_file(env_file_location, domain, email)
