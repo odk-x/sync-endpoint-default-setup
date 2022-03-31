@@ -2,7 +2,7 @@
 
 set -o pipefail
 
-echo "ODK Sync Database Bootstrap Script"
+echo "ODK-X Sync-Endpoint Database Bootstrap Script"
 
 if [ ${DB_BOOTSTRAP} != true ]; then
     echo 'DB_BOOTSTRAP not set to true'
@@ -10,13 +10,53 @@ if [ ${DB_BOOTSTRAP} != true ]; then
     exit 0
 fi;
 
+MAX_TRY=30
+
 # sleep 10 seconds to wait for db service to be created
-# TODO: test for it in a loop instead
 sleep 10
 
-STACK_NAME=$(docker ps -f "ID=${HOSTNAME}" --format '{{ .Names }}' | grep -oE '^[^_]*')
-DB_VAR=$(docker service inspect -f "{{if eq \"${STACK_NAME}_db\" .Spec.Name}}{{.Spec.TaskTemplate.ContainerSpec.Image}}{{end}}" $(docker service ls -q) | grep -oE '^[^:]*')
-DB_CONTAINER_ID=$(docker ps -f "volume=${STACK_NAME}_db-vol" --format '{{.ID}}')
+STACK_NAME=""
+COUNTER=0
+while [ -z "${STACK_NAME}" ]
+do
+	echo "Searching for Stack Name ..."
+	sleep 5
+	STACK_NAME=$(docker ps -f "ID=${HOSTNAME}" --format '{{ .Names }}' | grep -oE '^[^_]*')
+	COUNTER=`expr $COUNTER + 1`
+	if [ $COUNTER -gt $MAX_TRY ] ; then
+	   break;
+	fi
+done
+echo "Stack Name: ${STACK_NAME}"
+
+
+DB_VAR=""
+COUNTER=0
+while [ -z "${DB_VAR}" ]
+do
+	echo "Searching for DB Type ..."
+	sleep 5
+	DB_VAR=$(docker service inspect -f "{{if eq \"${STACK_NAME}_db\" .Spec.Name}}{{.Spec.TaskTemplate.ContainerSpec.Image}}{{end}}" $(docker service ls -q) | grep -oE '^[^:]*')
+	COUNTER=`expr $COUNTER + 1`
+	if [ $COUNTER -gt $MAX_TRY ] ; then
+	   break;
+	fi
+done
+echo "DB Type: ${DB_VAR}"
+
+DB_CONTAINER_ID=""
+COUNTER=0
+while [ -z "${DB_CONTAINER_ID}" ]
+do
+	echo "Searching for DB Container ID..."
+	sleep 5
+	DB_CONTAINER_ID=$(docker ps -f "volume=${STACK_NAME}_db-vol" --format '{{.ID}}')
+	COUNTER=`expr $COUNTER + 1`
+	if [ $COUNTER -gt $MAX_TRY ] ; then
+	   break;
+	fi
+done
+echo "Container ID: ${DB_CONTAINER_ID}"
 
 # try to establish tcp connection with db, each connection timesout after 1 second 
 WAIT_CMD="while ! nc -w 1 db \${DB_PORT} < /dev/null; do echo 'waiting'; sleep 1; done"
