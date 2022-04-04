@@ -1,0 +1,112 @@
+version: "3.3"
+
+services:
+
+  cert-bootstrap:
+    # The bootstrap service copies certificates and keys generated
+    # from the initialization script run outside docker into the
+    # production volume.
+    #
+    # It is important that certs are handed off to be managed within the
+    # docker stack so certbot can get new certificates
+    # automatically. Letsencrypt only issues short duration certs with a
+    # lifetime of 60 days. See the `certbot` service below.
+    image: certbot/certbot
+    entrypoint: /bin/sh -c "export CERTDIR=/etc/letsencrypt/live/production ; \
+      if [ ! -d $${CERTDIR} ] ; then \
+        mkdir -p $${CERTDIR} ; \
+        cp /org.eff.certbot.bootstrap_tls_fullchain $${CERTDIR}/fullchain.pem ; \
+        cp /run/secrets/org.eff.certbot.bootstrap_tls_privkey $${CERTDIR}/privkey.pem ; \
+        echo Copied bootstrap certs to $${CERTDIR} ; \
+      else \
+        echo Production directory $${CERTDIR} exists, not copying bootstrap certs ; \
+      fi"
+    env_file:
+      - config/https.env
+    deploy:
+      # The bootstrap service runs only once at stack startup.
+      replicas: 1
+      restart_policy:
+        condition: none
+      placement:
+        constraints:
+          - node.role == manager
+    configs:
+      - org.eff.certbot.bootstrap_tls_fullchain
+    secrets:
+      - org.eff.certbot.bootstrap_tls_privkey
+    volumes:
+      - https-certs-vol:/etc/letsencrypt
+
+  certbot:
+    # The certbot service runs in the background and periodically
+    # checks if it should request new certificates. Certificates are
+    # granted via the nonprofit letsencrypt CA and are validated
+    # through an ACMEv2 challenge. The certs will be renewed if the
+    # current cert expires in less than 30 days.
+    image: certbot/certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :;\
+      do \
+      echo $$HTTPS_ADMIN_EMAIL; \
+      certbot certonly --webroot -w /var/www/certbot \
+      --email $$HTTPS_ADMIN_EMAIL \
+      -d $$HTTPS_DOMAIN \
+      --rsa-key-size 4096 \
+      --agree-tos \
+      --cert-name renewal-staging \
+      --keep-until-expiring \
+      --non-interactive && \
+      cp /etc/letsencrypt/live/renewal-staging/*.pem /etc/letsencrypt/live/production; \
+      sleep 11h & wait $${!};\
+      done; \
+      "
+    env_file:
+      - config/https.env
+    networks:
+      - sync-network
+      - certbot-network
+    volumes:
+      - https-certs-vol:/etc/letsencrypt
+      - www-certbot-vol:/var/www/certbot
+
+  nginx:
+    # Reload nginx every 12 hours to poll for new certificate
+    # refreshes which happen in the background.
+    command: /bin/bash -c "\
+      while :; do \
+        sleep 12h & wait $${!}; \
+        nginx -s reload; \
+      done & \
+      nginx -g \"daemon off;\" \
+      "
+    volumes:
+      - https-certs-vol:/etc/letsencrypt
+      - www-certbot-vol:/var/www/certbot
+
+networks:
+  certbot-network:
+    driver: overlay
+    driver_opts:
+      encrypted: ""
+    # The certbot network allows access to the Internet so certbot can
+    # initiate the ACMEv2 handshake with letsencrypt.
+    internal: false
+
+volumes:
+  # A shared volume to allow the certbot to publish challenge
+  # responses which will be served by nginx.
+  www-certbot-vol:
+  # A shared volume to hold automatically issued certs and share them
+  # between certbot and nginx.
+  https-certs-vol:
+
+configs:
+  org.eff.certbot.bootstrap_tls_fullchain:
+    file: /etc/letsencrypt/live/bootstrap/fullchain.pem
+  # Override the default http nginx config with https.
+  com.nginx.sync-endpoint.conf:
+    file: ./config/nginx/sync-endpoint-https.conf
+
+secrets:
+  org.eff.certbot.bootstrap_tls_privkey:
+    file: /etc/letsencrypt/live/bootstrap/privkey.pem
