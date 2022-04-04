@@ -105,7 +105,7 @@ configs:
     file: /etc/letsencrypt/live/bootstrap/fullchain.pem
   # Override the default http nginx config with https.
   com.nginx.sync-endpoint.conf:
-    file: ./config/nginx/sync-endpoint-https.conf
+    file: ./config/nginx/sync-endpoint-https-certbot.conf
 
 secrets:
   org.eff.certbot.bootstrap_tls_privkey:
