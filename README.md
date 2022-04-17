@@ -2,10 +2,10 @@
 - Git
 - Docker (with swarm mode enabled)
 - Maven
-- (optional) Python3 and Certbot (These are needed if you are planning on using the [init-odkx-sync-endpoint.py](#Ubuntu-18.04-Example-installation) script and SSL certificates from letsencrypt)
+- (optional) Python3 and Certbot (These are needed if you are planning on using the [init-odkx-sync-endpoint.py](#ubuntu-1804-example-installation) script and SSL certificates from letsencrypt)
 
 ## Build
-Use the included init-odkx-sync-endpoint.py script [(see example installation on Ubuntu)](#Ubuntu-18.04-Example-installation) or follow the instructions below:
+Use the included init-odkx-sync-endpoint.py script [(see example installation on Ubuntu)](#ubuntu-1804-example-installation) or follow the instructions below:
 1. Follow instructions on [sync-endpoint](https://github.com/opendatakit/sync-endpoint) to build `odk/sync-endpoint`
 2. Follow instructions on https://github.com/opendatakit/sync-endpoint-web-ui to build `odk/sync-web-ui`
 3. Build `db-bootstrap` with `docker build -t odk/db-bootstrap db-bootstrap`
