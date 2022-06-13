@@ -19,7 +19,7 @@ def run_interactive_config():
     env_file_location = os.path.join(os.path.dirname(__file__), "config", "https.env")
 
     try:
-        domain, email = parse_env_file(env_file_location)
+        env = parse_env_file(env_file_location)
         typer.echo(f"Found configuration at {env_file_location}")
     except OSError:
         typer.echo(f"No default https configuration file found at expected path {env_file_location}. This prevents automatically renewing certs!")
@@ -32,7 +32,7 @@ def run_interactive_config():
     time.sleep(1)
     typer.echo("")
     typer.echo("Please input the domain name you will use for this installation. A valid domain name is required for HTTPS without distributing custom certificates.")
-    input_domain = typer.prompt(f"domain [({domain})]", default=domain, show_default=False)
+    input_domain = typer.prompt(f"domain [({env['HTTPS_DOMAIN']})]", default=env['HTTPS_DOMAIN'], show_default=False)
 
     if input_domain != "":
         env["HTTPS_DOMAIN"] = input_domain
@@ -52,7 +52,7 @@ def run_interactive_config():
     enforce_https = typer.confirm("enforce https?", default=True)
 
 
-    if not enforce_https:        
+    if not enforce_https:
         for i in range(1):
             typer.echo("Would you like to run an INSECURE and DANGEROUS server that will share your users's information if exposed to the Internet?")
             insecure = typer.confirm("run insecure?")
@@ -64,7 +64,7 @@ def run_interactive_config():
     typer.echo(f"Enforcing https: {enforce_https}")
     if enforce_https:
         typer.echo("Please provide an admin email for security updates with HTTPS registration")
-        input_email = typer.prompt(f"admin email [({email})]" , default=email, show_default=False)
+        input_email = typer.prompt(f"admin email [({env['HTTPS_ADMIN_EMAIL']})]" , default=env['HTTPS_ADMIN_EMAIL'], show_default=False)
 
         if input_email != "":
             env["HTTPS_ADMIN_EMAIL"] = input_email
@@ -78,12 +78,9 @@ def run_interactive_config():
             typer.echo("Re-run this script once the domain is ready!")
             raise typer.Exit()
 
-        print("Do you wish to supply your own SSL certificate? If not, the script will use certbot (please make sure it is already installed).")
-        manual_certificate = input(["y/(N)"]).strip().lower()
+        manual_certificate = typer.prompt("Do you wish to supply your own SSL certificate? If not, the script will use certbot (please make sure it is already installed).", default=False)
 
-        if manual_certificate == "" :
-            manual_certificate = "n"
-        if manual_certificate[0] != "y":
+        if not manual_certificate:
             os.system("sudo certbot certonly --standalone \
             --email {} \
             -d {} \
@@ -112,7 +109,7 @@ def run_interactive_config():
             env['CERT_PRIVKEY_PATH'] = cert_privkey_path
 
         typer.echo("Attempting to save updated https configuration")
-        write_to_env_file(env_file_location, domain, email)
+        write_to_env_file(env_file_location, env)
 
     return (enforce_https, env)
 
@@ -162,7 +159,7 @@ def run_sync_endpoint_build():
                cd sync-endpoint ; \
                mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests")
 
-def deploy_stack(use_https):
+def deploy_stack(use_https, env):
     if use_https:
         is_certbot = 'CERT_FULLCHAIN_PATH' not in env
         config = 'docker-compose-https-certbot.yml' if is_certbot else 'docker-compose-https.yml'
@@ -174,10 +171,10 @@ def deploy_stack(use_https):
         os.system("docker stack deploy -c docker-compose.yml syncldap")
 
 def install():
-    https = run_interactive_config()
+    https, env = run_interactive_config()
     run_docker_builds()
     run_sync_endpoint_build()
-    deploy_stack(https)
+    deploy_stack(https, env)
 
 if __name__ == "__main__":
     typer.run(install)
