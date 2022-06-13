@@ -21,6 +21,7 @@ def run_interactive_config():
     try:
         domain, email = parse_env_file(env_file_location)
         typer.echo(f"Found configuration at {env_file_location}")
+
     except OSError:
         typer.echo(f"No default https configuration file found at expected path {env_file_location}. This prevents automatically renewing certs!")
         typer.echo("Please check your paths and file permissions, and make sure your config repo is up to date.")
@@ -163,6 +164,7 @@ def run_sync_endpoint_build():
                mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests")
 
 def deploy_stack(use_https):
+
     if use_https:
         is_certbot = 'CERT_FULLCHAIN_PATH' not in env
         config = 'docker-compose-https-certbot.yml' if is_certbot else 'docker-compose-https.yml'
