@@ -13,6 +13,7 @@ import typer
 from tempfile import mkstemp
 from shutil import move, copymode
 from os import fdopen, remove, path
+from typing import Dict
 from xml import dom
 
 def run_interactive_config():
@@ -125,7 +126,7 @@ def replaceInFile(file_path: str , pattern: str, subst: str):
     move(abs_path, file_path)
 
 
-def write_to_env_file(filepath: str, env: dict):
+def write_to_env_file(filepath: str, env: Dict[str, str]):
     """A janky in-memory file write.
 
     This is not atomic and would use lots of ram for large files.
@@ -135,7 +136,7 @@ def write_to_env_file(filepath: str, env: dict):
             f.write("{}={}\n".format(key, val))
 
 
-def parse_env_file(filepath: str):
+def parse_env_file(filepath: str) -> Dict[str, str]:
     env = {}
     with open(filepath) as f:
         for line in f:
@@ -159,7 +160,7 @@ def run_sync_endpoint_build():
                cd sync-endpoint ; \
                mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests")
 
-def deploy_stack(use_https: bool, env: dict):
+def deploy_stack(use_https: bool, env: Dict[str, str]):
     if use_https:
         is_certbot = 'CERT_FULLCHAIN_PATH' not in env
         config = 'docker-compose-https-certbot.yml' if is_certbot else 'docker-compose-https.yml'
