@@ -32,7 +32,7 @@ def run_interactive_config():
     time.sleep(1)
     typer.echo("")
     typer.echo("Please input the domain name you will use for this installation. A valid domain name is required for HTTPS without distributing custom certificates.")
-    input_domain = typer.prompt(f"domain [({env['HTTPS_DOMAIN']})]", default=env['HTTPS_DOMAIN'], show_default=False)
+    input_domain: str = typer.prompt(f"domain [({env['HTTPS_DOMAIN']})]", default=env['HTTPS_DOMAIN'], show_default=False)
 
     if input_domain != "":
         env["HTTPS_DOMAIN"] = input_domain
@@ -42,7 +42,7 @@ def run_interactive_config():
     if use_custom_password:
         typer.echo("")
         typer.echo("Please input the password to use for ldap admin")
-        default_ldap_pwd = typer.prompt("Ldap admin password", hide_input=True)
+        default_ldap_pwd: str = typer.prompt("Ldap admin password", hide_input=True)
 
         if default_ldap_pwd != "":
             replaceInFile("ldap.env", r"^\s*LDAP_ADMIN_PASSWORD=.*$", "LDAP_ADMIN_PASSWORD={}".format(default_ldap_pwd))
@@ -64,7 +64,7 @@ def run_interactive_config():
     typer.echo(f"Enforcing https: {enforce_https}")
     if enforce_https:
         typer.echo("Please provide an admin email for security updates with HTTPS registration")
-        input_email = typer.prompt(f"admin email [({env['HTTPS_ADMIN_EMAIL']})]" , default=env['HTTPS_ADMIN_EMAIL'], show_default=False)
+        input_email: str = typer.prompt(f"admin email [({env['HTTPS_ADMIN_EMAIL']})]" , default=env['HTTPS_ADMIN_EMAIL'], show_default=False)
 
         if input_email != "":
             env["HTTPS_ADMIN_EMAIL"] = input_email
@@ -78,7 +78,7 @@ def run_interactive_config():
             typer.echo("Re-run this script once the domain is ready!")
             raise typer.Exit()
 
-        manual_certificate = typer.prompt("Do you wish to supply your own SSL certificate? If not, the script will use certbot (please make sure it is already installed).", default=False)
+        manual_certificate: str = typer.prompt("Do you wish to supply your own SSL certificate? If not, the script will use certbot (please make sure it is already installed).", default=False)
 
         if not manual_certificate:
             os.system("sudo certbot certonly --standalone \
@@ -90,21 +90,21 @@ def run_interactive_config():
             --keep-until-expiring \
             --non-interactive".format(env["HTTPS_ADMIN_EMAIL"], env["HTTPS_DOMAIN"]))
         else:
-            cert_fullchain_path = env.get("CERT_FULLCHAIN_PATH")
-            cert_privkey_path = env.get("CERT_PRIVKEY_PATH")
-            print('Please enter path to fullchain .pem/.crt file')
-            cert_fullchain_path = input("fullchain file [({})]:".format(cert_fullchain_path)).strip() or cert_fullchain_path
-            print('Please enter path to private key .pem file')
-            cert_privkey_path = input("private key file [({})]:".format(cert_privkey_path)).strip() or cert_privkey_path
+            cert_fullchain_path: str = env.get("CERT_FULLCHAIN_PATH")
+            cert_privkey_path: str = env.get("CERT_PRIVKEY_PATH")
+            typer.echo('Please enter path to fullchain .pem/.crt file')
+            cert_fullchain_path = typer.prompt(f"fullchain file [({cert_fullchain_path})]", default=cert_fullchain_path, show_default=False)
+            typer.echo('Please enter path to private key .pem file')
+            cert_privkey_path = typer.prompt(f"private key file [({cert_privkey_path})]", default=cert_privkey_path, show_default=False)
             if not cert_fullchain_path or not cert_privkey_path:
-                print('Input not provided, re-run this script with correct inputs.')
-                exit(1)
+                typer.echo('Input not provided, re-run this script with correct inputs.')
+                raise typer.Exit()
             # Compute absolute paths from relative path inputs
             cert_fullchain_path = path.abspath(cert_fullchain_path)
             cert_privkey_path = path.abspath(cert_privkey_path)
             if not path.exists(cert_fullchain_path) or not path.exists(cert_privkey_path):
-                print('File at the given path do not exists, re-run this script with correct inputs.')
-                exit(1)
+                typer.echo('File at the given path do not exists, re-run this script with correct inputs.')
+                raise typer.Exit()
             env['CERT_FULLCHAIN_PATH'] = cert_fullchain_path
             env['CERT_PRIVKEY_PATH'] = cert_privkey_path
 
@@ -114,7 +114,7 @@ def run_interactive_config():
     return (enforce_https, env)
 
 
-def replaceInFile(file_path, pattern, subst):
+def replaceInFile(file_path: str , pattern: str, subst: str):
     fh, abs_path = mkstemp()
     with fdopen(fh,'w') as new_file:
         with open(file_path) as old_file:
@@ -125,7 +125,7 @@ def replaceInFile(file_path, pattern, subst):
     move(abs_path, file_path)
 
 
-def write_to_env_file(filepath, env: dict):
+def write_to_env_file(filepath: str, env: dict):
     """A janky in-memory file write.
 
     This is not atomic and would use lots of ram for large files.
@@ -135,7 +135,7 @@ def write_to_env_file(filepath, env: dict):
             f.write("{}={}\n".format(key, val))
 
 
-def parse_env_file(filepath):
+def parse_env_file(filepath: str):
     env = {}
     with open(filepath) as f:
         for line in f:
@@ -159,7 +159,7 @@ def run_sync_endpoint_build():
                cd sync-endpoint ; \
                mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests")
 
-def deploy_stack(use_https, env):
+def deploy_stack(use_https: bool, env: dict):
     if use_https:
         is_certbot = 'CERT_FULLCHAIN_PATH' not in env
         config = 'docker-compose-https-certbot.yml' if is_certbot else 'docker-compose-https.yml'
