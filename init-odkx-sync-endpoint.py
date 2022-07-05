@@ -10,10 +10,11 @@ import time
 import os
 import re
 import typer
+import json
 from tempfile import mkstemp
 from shutil import move, copymode
 from os import fdopen, remove, path
-from typing import Dict
+from typing import Dict, Union
 from xml import dom
 
 def run_interactive_config():
@@ -32,11 +33,37 @@ def run_interactive_config():
     typer.echo("We'll need some information from you to get started though...")
     time.sleep(1)
     typer.echo("")
+
+    if is_cache_present() and is_complete_cache():
+        allow_cache = typer.confirm("Do you wish to use cached configuratilon?", default=True)
+        typer.echo("")
+        if allow_cache:
+            cached_data = load_progress()
+            enforce_https = cached_data['enforce_https']
+            manual_certificate = cached_data['manual_certificate']
+            if manual_certificate :
+                setup_manual_certificate(env)
+            else:
+                setup_certbot_certificate(env)
+        else:
+            os.remove('progress.json')
+            enforce_https = run_cache_setup(env)
+    else:
+        enforce_https = run_cache_setup(env)
+
+    write_to_env_file(env_file_location, env)
+
+    return (enforce_https, env)
+
+def run_cache_setup(env : Dict[str, str]) -> bool:
+
     typer.echo("Please input the domain name you will use for this installation. A valid domain name is required for HTTPS without distributing custom certificates.")
     input_domain: str = typer.prompt(f"domain [({env['HTTPS_DOMAIN']})]", default=env['HTTPS_DOMAIN'], show_default=False)
 
     if input_domain != "":
-        env["HTTPS_DOMAIN"] = input_domain
+        env['HTTPS_DOMAIN'] = input_domain
+        save_progress('env', {'HTTPS_DOMAIN': input_domain})
+
 
     typer.echo("")
     use_custom_password = typer.confirm("Do you want to use a custom LDAP administration password?")
@@ -62,6 +89,8 @@ def run_interactive_config():
             if i==0:
                 raise RuntimeError("HTTPS is currently required to run a secure public server. Please restart and select to enforce HTTPS")
 
+    save_progress('enforce_https', enforce_https)
+
     typer.echo(f"Enforcing https: {enforce_https}")
     if enforce_https:
         typer.echo("Please provide an admin email for security updates with HTTPS registration")
@@ -69,6 +98,7 @@ def run_interactive_config():
 
         if input_email != "":
             env["HTTPS_ADMIN_EMAIL"] = input_email
+            save_progress('env', {'HTTPS_DOMAIN': input_domain, 'HTTPS_ADMIN_EMAIL': input_email})
 
         typer.echo("The system will now attempt to setup an HTTPS certificate for this server.")
         typer.echo("For this to work you must have already have purchased/acquired a domain name (or subdomain) and setup a DNS A or AAAA record to point at this server's IP address.")
@@ -82,37 +112,35 @@ def run_interactive_config():
         manual_certificate: str = typer.prompt("Do you wish to supply your own SSL certificate? If not, the script will use certbot (please make sure it is already installed).", default=False)
 
         if not manual_certificate:
-            os.system("sudo certbot certonly --standalone \
-            --email {} \
-            -d {} \
-            --rsa-key-size 4096 \
-            --agree-tos \
-            --cert-name bootstrap \
-            --keep-until-expiring \
-            --non-interactive".format(env["HTTPS_ADMIN_EMAIL"], env["HTTPS_DOMAIN"]))
+            setup_certbot_certificate(env)
         else:
-            cert_fullchain_path: str = env.get("CERT_FULLCHAIN_PATH")
-            cert_privkey_path: str = env.get("CERT_PRIVKEY_PATH")
-            typer.echo('Please enter path to fullchain .pem/.crt file')
-            cert_fullchain_path = typer.prompt(f"fullchain file [({cert_fullchain_path})]", default=cert_fullchain_path, show_default=False)
-            typer.echo('Please enter path to private key .pem file')
-            cert_privkey_path = typer.prompt(f"private key file [({cert_privkey_path})]", default=cert_privkey_path, show_default=False)
-            if not cert_fullchain_path or not cert_privkey_path:
-                typer.echo('Input not provided, re-run this script with correct inputs.')
-                raise typer.Exit()
-            # Compute absolute paths from relative path inputs
-            cert_fullchain_path = path.abspath(cert_fullchain_path)
-            cert_privkey_path = path.abspath(cert_privkey_path)
-            if not path.exists(cert_fullchain_path) or not path.exists(cert_privkey_path):
-                typer.echo('File at the given path do not exists, re-run this script with correct inputs.')
-                raise typer.Exit()
-            env['CERT_FULLCHAIN_PATH'] = cert_fullchain_path
-            env['CERT_PRIVKEY_PATH'] = cert_privkey_path
-
+            setup_manual_certificate(env)
+        
+        save_progress('manual_certificate', manual_certificate)
         typer.echo("Attempting to save updated https configuration")
-        write_to_env_file(env_file_location, env)
+    return enforce_https
 
-    return (enforce_https, env)
+def is_cache_present() -> bool:
+    return os.path.exists('progress.json') and os.stat('progress.json').st_size != 0 
+
+def save_progress(key: str, value: Union[str, bool, Dict[str, str]]):
+    if is_cache_present():
+        with open('progress.json', 'r') as progress_file:
+            data: Dict[str,  Union[str, bool, Dict[str, str]]] = json.load(progress_file) 
+            data.update({key: value})
+    else :
+        data: Dict[str,  Union[str, bool, Dict[str, str]]] = {key: value}
+
+    with open('progress.json', 'w') as progress_file:
+        json.dump(data, progress_file)
+
+def load_progress() -> Dict[str,  Union[str, bool, Dict[str, str]]]:
+    with open('progress.json', 'r') as progress_file:
+        return json.load(progress_file)
+
+def is_complete_cache() -> bool:
+    data = load_progress()
+    return not (('env' not in data.keys()) or ('enforce_https' not in data.keys()) or ('manual_certificate' not in data.keys()))
 
 
 def replaceInFile(file_path: str , pattern: str, subst: str):
@@ -125,6 +153,35 @@ def replaceInFile(file_path: str , pattern: str, subst: str):
     remove(file_path)
     move(abs_path, file_path)
 
+def setup_manual_certificate(env: Dict[str, str]):
+    cert_fullchain_path: str = env.get("CERT_FULLCHAIN_PATH")
+    cert_privkey_path: str = env.get("CERT_PRIVKEY_PATH")
+    typer.echo('Please enter path to fullchain .pem/.crt file')
+    cert_fullchain_path = typer.prompt(f"fullchain file [({cert_fullchain_path})]", default=cert_fullchain_path, show_default=False)
+    typer.echo('Please enter path to private key .pem file')
+    cert_privkey_path = typer.prompt(f"private key file [({cert_privkey_path})]", default=cert_privkey_path, show_default=False)
+    if not cert_fullchain_path or not cert_privkey_path:
+        typer.echo('Input not provided, re-run this script with correct inputs.')
+        raise typer.Exit()
+    # Compute absolute paths from relative path inputs
+    cert_fullchain_path = path.abspath(cert_fullchain_path)
+    cert_privkey_path = path.abspath(cert_privkey_path)
+    if not path.exists(cert_fullchain_path) or not path.exists(cert_privkey_path):
+        typer.echo('File at the given path do not exists, re-run this script with correct inputs.')
+        raise typer.Exit()
+    env['CERT_FULLCHAIN_PATH'] = cert_fullchain_path
+    env['CERT_PRIVKEY_PATH'] = cert_privkey_path
+
+def setup_certbot_certificate(env: Dict[str, str]):
+    typer.echo("Please enter your system Password")
+    os.system("sudo certbot certonly --standalone \
+    --email {} \
+    -d {} \
+    --rsa-key-size 4096 \
+    --agree-tos \
+    --cert-name bootstrap \
+    --keep-until-expiring \
+    --non-interactive".format(env["HTTPS_ADMIN_EMAIL"], env["HTTPS_DOMAIN"]))
 
 def write_to_env_file(filepath: str, env: Dict[str, str]):
     """A janky in-memory file write.
