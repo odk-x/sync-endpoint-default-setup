@@ -129,7 +129,7 @@ def save_progress(key: str, value: Union[str, bool, Dict[str, str]]):
             data: Dict[str,  Union[str, bool, Dict[str, str]]] = json.load(progress_file) 
             data.update({key: value})
     else :
-        data: Dict[str,  Union[str, bool, Dict[str, str]]] = {key: value}
+        data = {key: value}
 
     with open('progress.json', 'w') as progress_file:
         json.dump(data, progress_file)
@@ -154,8 +154,8 @@ def replaceInFile(file_path: str , pattern: str, subst: str):
     move(abs_path, file_path)
 
 def setup_manual_certificate(env: Dict[str, str]):
-    cert_fullchain_path: str = env.get("CERT_FULLCHAIN_PATH")
-    cert_privkey_path: str = env.get("CERT_PRIVKEY_PATH")
+    cert_fullchain_path: str = env['CERT_FULLCHAIN_PATH']
+    cert_privkey_path: str = env['CERT_PRIVKEY_PATH']
     typer.echo('Please enter path to fullchain .pem/.crt file')
     cert_fullchain_path = typer.prompt(f"fullchain file [({cert_fullchain_path})]", default=cert_fullchain_path, show_default=False)
     typer.echo('Please enter path to private key .pem file')
