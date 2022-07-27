@@ -37,7 +37,7 @@ def run_interactive_config():
     typer.echo("")
 
     if is_cache_present() and is_complete_cache():
-        allow_cache = typer.confirm("Do you wish to use cached configuratilon?", default=True)
+        allow_cache = typer.confirm("Do you wish to use cached configuration?", default=True)
         typer.echo("")
         if allow_cache:
             cached_data = load_progress()
