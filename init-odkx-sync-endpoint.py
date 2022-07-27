@@ -58,7 +58,6 @@ def run_interactive_config():
 
     return (enforce_https, env)
 
-@app.command()
 def run_cache_setup(envParam) -> bool:
 
     env:Dict[str, str] = envParam
