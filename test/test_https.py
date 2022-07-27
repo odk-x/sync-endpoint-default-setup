@@ -1,9 +1,7 @@
-from distutils.command.install import install
 import importlib
 import pytest
 import os
 from typing import Dict
-import serial
 import typer
 from typer.testing import CliRunner
 jw = importlib.import_module('init-odkx-sync-endpoint')
@@ -11,7 +9,6 @@ jw = importlib.import_module('init-odkx-sync-endpoint')
 env = {"HTTPS_DOMAIN":"odk-x", "HTTPS_ADMIN_EMAIL":"jesse@odk-x.com"}
 
 runner = CliRunner()
-ser = serial.Serial() 
 
 def test_run_cache_setup(mocker):
     mocker.patch('init-odkx-sync-endpoint.is_enforce_https', return_value=True)
