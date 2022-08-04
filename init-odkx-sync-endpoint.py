@@ -9,6 +9,7 @@ support for internationalization.
 import time
 import os
 import re
+import subprocess
 import typer
 import json
 from tempfile import mkstemp
@@ -60,12 +61,11 @@ def run_cache_setup(env : Dict[str, str]) -> bool:
     typer.echo("Please input the domain name you will use for this installation. A valid domain name is required for HTTPS without distributing custom certificates.")
     input_domain: str = typer.prompt(f"domain [({env['HTTPS_DOMAIN']})]", default=env['HTTPS_DOMAIN'], show_default=False)
 
-    if input_domain != "":
-        env['HTTPS_DOMAIN'] = input_domain
-        save_progress('env', {'HTTPS_DOMAIN': input_domain})
-
-
+    check_valid_domain(input_domain)
+    env['HTTPS_DOMAIN'] = input_domain
+    save_progress('env', {'HTTPS_DOMAIN': input_domain})
     typer.echo("")
+
     use_custom_password = typer.confirm("Do you want to use a custom LDAP administration password?")
     if use_custom_password:
         typer.echo("")
@@ -96,9 +96,9 @@ def run_cache_setup(env : Dict[str, str]) -> bool:
         typer.echo("Please provide an admin email for security updates with HTTPS registration")
         input_email: str = typer.prompt(f"admin email [({env['HTTPS_ADMIN_EMAIL']})]" , default=env['HTTPS_ADMIN_EMAIL'], show_default=False)
 
-        if input_email != "":
-            env["HTTPS_ADMIN_EMAIL"] = input_email
-            save_progress('env', {'HTTPS_DOMAIN': input_domain, 'HTTPS_ADMIN_EMAIL': input_email})
+        check_valid_email(input_email)
+        env["HTTPS_ADMIN_EMAIL"] = input_email
+        save_progress('env', {'HTTPS_DOMAIN': input_domain, 'HTTPS_ADMIN_EMAIL': input_email})
 
         typer.echo("The system will now attempt to setup an HTTPS certificate for this server.")
         typer.echo("For this to work you must have already have purchased/acquired a domain name (or subdomain) and setup a DNS A or AAAA record to point at this server's IP address.")
@@ -119,6 +119,21 @@ def run_cache_setup(env : Dict[str, str]) -> bool:
         save_progress('manual_certificate', manual_certificate)
         typer.echo("Attempting to save updated https configuration")
     return enforce_https
+
+def check_valid_email(email):
+    pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+
+    if not (email!="" and re.match(pattern, email)):
+        typer.echo(f"Invalid email address: {email}")
+        typer.echo('Re-run this script with the correct email address.')
+        raise typer.Exit()
+
+def check_valid_domain(domain):
+    pattern = r"^([A-Za-z0-9]\.|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9]\.){1,3}[A-Za-z]{2,6}$"
+    if not (domain!="" and re.match(pattern, domain)):
+        typer.echo(f"Invalid domain: {domain}")
+        typer.echo('Re-run this script with the correct domain.')
+        raise typer.Exit()
 
 def is_cache_present() -> bool:
     return os.path.exists('progress.json') and os.stat('progress.json').st_size != 0 
@@ -174,14 +189,18 @@ def setup_manual_certificate(env: Dict[str, str]):
 
 def setup_certbot_certificate(env: Dict[str, str]):
     typer.echo("Please enter your system Password")
-    os.system("sudo certbot certonly --standalone \
-    --email {} \
-    -d {} \
-    --rsa-key-size 4096 \
-    --agree-tos \
-    --cert-name bootstrap \
-    --keep-until-expiring \
-    --non-interactive".format(env["HTTPS_ADMIN_EMAIL"], env["HTTPS_DOMAIN"]))
+    try:
+        subprocess.run("sudo certbot certonly --standalone \
+        --email {} \
+        -d {} \
+        --rsa-key-size 4096 \
+        --agree-tos \
+        --cert-name bootstrap \
+        --keep-until-expiring \
+        --non-interactive".format(env["HTTPS_ADMIN_EMAIL"], env["HTTPS_DOMAIN"]), shell=True, check=True)
+    except subprocess.CalledProcessError:
+        typer.echo("Error setting up certbot certificate.")
+        typer.echo("")
 
 def write_to_env_file(filepath: str, env: Dict[str, str]):
     """A janky in-memory file write.
@@ -206,27 +225,38 @@ def parse_env_file(filepath: str) -> Dict[str, str]:
 
 
 def run_docker_builds():
-    os.system("docker build --pull -t odk/sync-web-ui https://github.com/odk-x/sync-endpoint-web-ui.git")
-    os.system("docker build --pull -t odk/db-bootstrap db-bootstrap")
-    os.system("docker build --pull -t odk/openldap openldap")
-    os.system("docker build --pull -t odk/phpldapadmin phpldapadmin")
-
+    try:
+        subprocess.run("docker build --pull -t odk/sync-web-ui https://github.com/odk-x/sync-endpoint-web-ui.git", shell=True, check=True)
+        subprocess.run("docker build --pull -t odk/db-bootstrap db-bootstrap", shell=True, check=True)
+        subprocess.run("docker build --pull -t odk/openldap openldap", shell=True, check=True)
+        subprocess.run("docker build --pull -t odk/phpldapadmin phpldapadmin", shell=True, check=True)
+    except subprocess.CalledProcessError:
+        typer.echo("Error pulling required docker images.")
+        typer.echo("")
 
 def run_sync_endpoint_build():
-    os.system("git clone -b master --single-branch --depth=1 https://github.com/odk-x/sync-endpoint ; \
-               cd sync-endpoint ; \
-               mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests")
+    try:
+        subprocess.run("git clone -b master --single-branch --depth=1 https://github.com/odk-x/sync-endpoint ; \
+                cd sync-endpoint ; \
+                mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests", shell=True, check=True)
+    except subprocess.CalledProcessError:
+        typer.echo("Error building sync endpoint.")
+        typer.echo("")
 
 def deploy_stack(use_https: bool, env: Dict[str, str]):
-    if use_https:
-        is_certbot = 'CERT_FULLCHAIN_PATH' not in env
-        config = 'docker-compose-https-certbot.yml' if is_certbot else 'docker-compose-https.yml'
-        envstring = ""
-        if not is_certbot:
-            envstring = "env CERT_FULLCHAIN_PATH={} CERT_PRIVKEY_PATH={}".format(env["CERT_FULLCHAIN_PATH"], env["CERT_PRIVKEY_PATH"])
-        os.system("{} docker stack deploy -c docker-compose.yml -c {} syncldap".format(envstring, config))
-    else:
-        os.system("docker stack deploy -c docker-compose.yml syncldap")
+    try:
+        if use_https:
+            is_certbot = 'CERT_FULLCHAIN_PATH' not in env
+            config = 'docker-compose-https-certbot.yml' if is_certbot else 'docker-compose-https.yml'
+            envstring = ""
+            if not is_certbot:
+                envstring = "env CERT_FULLCHAIN_PATH={} CERT_PRIVKEY_PATH={}".format(env["CERT_FULLCHAIN_PATH"], env["CERT_PRIVKEY_PATH"])
+            subprocess.run("{} docker stack deploy -c docker-compose.yml -c {} syncldap".format(envstring, config), shell=True, check=True)
+        else:
+            subprocess.run("docker stack deploy -c docker-compose.yml syncldap", shell=True, check=True)
+    except subprocess.CalledProcessError:
+        typer.echo("Error deploying stack.")
+        typer.echo("")
 
 def install():
     https, env = run_interactive_config()
