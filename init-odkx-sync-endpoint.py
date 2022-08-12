@@ -122,6 +122,9 @@ def run_cache_setup(envParam) -> bool:
         typer.echo("Attempting to save updated https configuration")
     return enforce_https
 
+def is_enforce_https() -> bool:
+    return typer.confirm("enforce https?", default=True)
+
 def check_valid_email(email):
     pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
 
