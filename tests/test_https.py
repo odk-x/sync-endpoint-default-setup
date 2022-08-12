@@ -7,11 +7,11 @@ from typer.testing import CliRunner
 
 jw = importlib.import_module('init-odkx-sync-endpoint')
 
-env = {"HTTPS_DOMAIN":"odk-x", "HTTPS_ADMIN_EMAIL":"jesse@odk-x.com"}
+env = {"HTTPS_DOMAIN":"odk-x.com", "HTTPS_ADMIN_EMAIL":"jesse@odk-x.com"}
 
 runner = CliRunner()
 
-    app = typer.Typer()
+app = typer.Typer()
 
 def test_run_cache_setup(mocker):
     """Test creation of cache file with provided inputs
@@ -29,7 +29,7 @@ def test_run_cache_setup(mocker):
     app.callback(invoke_without_command=True)(lambda : jw.run_cache_setup(env))
 
     # Invoke the test application
-    result = runner.invoke(app, input="odk-x\n\n\njesse@odk-x.com\n\n")
+    result = runner.invoke(app, input="odk-x.com\n\n\njesse@odk-x.com\n\n")
 
     print("Test run standard output:")
     print(result.stdout)
