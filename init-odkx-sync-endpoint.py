@@ -18,6 +18,8 @@ from os import fdopen, remove, path
 from typing import Dict, Union
 from xml import dom
 
+app = typer.Typer(add_completion=False)
+
 def run_interactive_config():
     env_file_location = os.path.join(os.path.dirname(__file__), "config", "https.env")
 
@@ -36,7 +38,7 @@ def run_interactive_config():
     typer.echo("")
 
     if is_cache_present() and is_complete_cache():
-        allow_cache = typer.confirm("Do you wish to use cached configuratilon?", default=True)
+        allow_cache = typer.confirm("Do you wish to use cached configuration?", default=True)
         typer.echo("")
         if allow_cache:
             cached_data = load_progress()
@@ -56,8 +58,9 @@ def run_interactive_config():
 
     return (enforce_https, env)
 
-def run_cache_setup(env : Dict[str, str]) -> bool:
+def run_cache_setup(envParam) -> bool:
 
+    env:Dict[str, str] = envParam
     typer.echo("Please input the domain name you will use for this installation. A valid domain name is required for HTTPS without distributing custom certificates.")
     input_domain: str = typer.prompt(f"domain [({env['HTTPS_DOMAIN']})]", default=env['HTTPS_DOMAIN'], show_default=False)
 
@@ -77,8 +80,7 @@ def run_cache_setup(env : Dict[str, str]) -> bool:
             typer.echo(f"Password set to: {default_ldap_pwd}")
 
     typer.echo("Would you like to enforce HTTPS? We recommend yes.")
-    enforce_https = typer.confirm("enforce https?", default=True)
-
+    enforce_https = is_enforce_https()
 
     if not enforce_https:
         for i in range(1):
@@ -258,6 +260,7 @@ def deploy_stack(use_https: bool, env: Dict[str, str]):
         typer.echo("Error deploying stack.")
         typer.echo("")
 
+@app.callback(invoke_without_command=True)
 def install():
     https, env = run_interactive_config()
     run_docker_builds()
@@ -265,4 +268,5 @@ def install():
     deploy_stack(https, env)
 
 if __name__ == "__main__":
-    typer.run(install)
+    app()
+
