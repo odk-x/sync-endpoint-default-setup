@@ -1,4 +1,4 @@
-name: Run Type Checks
+name: Run Type Checks and tests
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
@@ -13,8 +13,9 @@ jobs:
         python-version: 3.8
     - name: Install Dependencies
       run: |
-        pip install mypy
-        pip install typer
+        pip install mypy typer pytest pytest-mock
     - name: mypy
       run: |
         mypy init-odkx-sync-endpoint.py
+    - name: Run unit tests
+      run: python3 -m pytest --import-mode=append tests/
