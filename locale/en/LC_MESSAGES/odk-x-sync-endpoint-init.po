@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-08-19 19:40+0300\n"
+"POT-Creation-Date: 2022-08-23 06:14+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,46 +17,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.10.3\n"
 
-#: init-odkx-sync-endpoint.py:51
+#: init-odkx-sync-endpoint.py:52
 msgid "Found configuration at {env_file_location}"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:53
+#: init-odkx-sync-endpoint.py:54
 msgid ""
 "No default https configuration file found at expected path "
 "{env_file_location}. This prevents automatically renewing certs!"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:54
+#: init-odkx-sync-endpoint.py:55
 msgid ""
 "Please check your paths and file permissions, and make sure your config "
 "repo is up to date."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:57
+#: init-odkx-sync-endpoint.py:58
 msgid "Welcome to the ODK-X sync endpoint installation!"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:58
+#: init-odkx-sync-endpoint.py:59
 msgid "This script will guide you through setting up your installation"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:59
+#: init-odkx-sync-endpoint.py:60
 msgid "We'll need some information from you to get started though..."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:64
+#: init-odkx-sync-endpoint.py:65
 msgid "Do you wish to use cached configuratilon?"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:86
+#: init-odkx-sync-endpoint.py:87
 msgid ""
 "Please input the domain name you will use for this installation. A valid "
 "domain name is required for HTTPS without distributing custom "
 "certificates."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:87
+#: init-odkx-sync-endpoint.py:88
 msgid "domain [({envParam_https_domain})]"
 msgstr ""
 
@@ -64,126 +64,146 @@ msgstr ""
 msgid "Do you want to use a custom LDAP administration password?"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:98
+#: init-odkx-sync-endpoint.py:99
 msgid "Please input the password to use for ldap admin"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:99
+#: init-odkx-sync-endpoint.py:100
 msgid "Ldap admin password"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:103
+#: init-odkx-sync-endpoint.py:104
 msgid "Password set to: {default_ldap_pwd}"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:105
+#: init-odkx-sync-endpoint.py:106
 msgid "Would you like to enforce HTTPS? We recommend yes."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:106 init-odkx-sync-endpoint.py:150
-msgid "enforce https?"
-msgstr ""
-
-#: init-odkx-sync-endpoint.py:111
+#: init-odkx-sync-endpoint.py:112
 msgid ""
 "Would you like to run an INSECURE and DANGEROUS server that will share "
 "your users's information if exposed to the Internet?"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:112
+#: init-odkx-sync-endpoint.py:113
 msgid "run insecure?"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:116
+#: init-odkx-sync-endpoint.py:117
 msgid ""
 "HTTPS is currently required to run a secure public server. Please restart"
 " and select to enforce HTTPS"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:120
+#: init-odkx-sync-endpoint.py:121
 msgid "Enforcing https: {enforce_https}"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:122
+#: init-odkx-sync-endpoint.py:123
 msgid "Please provide an admin email for security updates with HTTPS registration"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:123
+#: init-odkx-sync-endpoint.py:124
 msgid "admin email [({envParam_https_admin_email})]"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:129
+#: init-odkx-sync-endpoint.py:130
 msgid "The system will now attempt to setup an HTTPS certificate for this server."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:130
+#: init-odkx-sync-endpoint.py:131
 msgid ""
 "For this to work you must have already have purchased/acquired a domain "
 "name (or subdomain) and setup a DNS A or AAAA record to point at this "
 "server's IP address."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:131
+#: init-odkx-sync-endpoint.py:132
 msgid "If you have not done this yet, please do it now..."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:133
+#: init-odkx-sync-endpoint.py:134
 msgid "Domain is ready to proceed with certificate acquisition?"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:135
+#: init-odkx-sync-endpoint.py:136
 msgid "Re-run this script once the domain is ready!"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:138
+#: init-odkx-sync-endpoint.py:139
 msgid ""
 "Do you wish to supply your own SSL certificate? If not, the script will "
 "use certbot (please make sure it is already installed)."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:146
+#: init-odkx-sync-endpoint.py:147
 msgid "Attempting to save updated https configuration"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:188
+#: init-odkx-sync-endpoint.py:151
+msgid "enforce https?"
+msgstr ""
+
+#: init-odkx-sync-endpoint.py:157
+msgid "Invalid email address: {email}"
+msgstr ""
+
+#: init-odkx-sync-endpoint.py:158
+msgid "Re-run this script with the correct email address."
+msgstr ""
+
+#: init-odkx-sync-endpoint.py:164
+msgid "Invalid domain: {domain}"
+msgstr ""
+
+#: init-odkx-sync-endpoint.py:165
+msgid "Re-run this script with the correct domain."
+msgstr ""
+
+#: init-odkx-sync-endpoint.py:204
 msgid "Please enter path to fullchain .pem/.crt file"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:189
+#: init-odkx-sync-endpoint.py:205
 msgid "fullchain file [({cert_fullchain_path})]"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:190
+#: init-odkx-sync-endpoint.py:206
 msgid "Please enter path to private key .pem file"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:191
+#: init-odkx-sync-endpoint.py:207
 msgid "private key file [({cert_privkey_path})]"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:193
+#: init-odkx-sync-endpoint.py:209
 msgid "Input not provided, re-run this script with correct inputs."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:199
+#: init-odkx-sync-endpoint.py:215
 msgid ""
 "File at the given path do not exists, re-run this script with correct "
 "inputs."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:205
+#: init-odkx-sync-endpoint.py:221
 msgid "Please enter your system Password"
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:244
+#: init-odkx-sync-endpoint.py:232
+msgid "Error setting up certbot certificate."
+msgstr ""
+
+#: init-odkx-sync-endpoint.py:264
 msgid "Error pulling required docker images."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:253
+#: init-odkx-sync-endpoint.py:273
 msgid "Error building sync endpoint."
 msgstr ""
 
-#: init-odkx-sync-endpoint.py:268
+#: init-odkx-sync-endpoint.py:288
 msgid "Error deploying stack."
 msgstr ""
 
