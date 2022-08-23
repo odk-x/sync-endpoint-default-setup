@@ -88,7 +88,7 @@ def run_cache_setup(envParam: Dict[str, str]) -> bool:
     input_domain: str = typer.prompt(_("domain [({envParam_https_domain})]").format(envParam_https_domain=envParam['HTTPS_DOMAIN']), default=envParam['HTTPS_DOMAIN'], show_default=False)
 
     check_valid_domain(input_domain)
-    env['HTTPS_DOMAIN'] = input_domain
+    envParam['HTTPS_DOMAIN'] = input_domain
     save_progress('env', {'HTTPS_DOMAIN': input_domain})
     typer.echo("")
 
@@ -124,7 +124,7 @@ def run_cache_setup(envParam: Dict[str, str]) -> bool:
         input_email: str = typer.prompt(_("admin email [({envParam_https_admin_email})]").format(envParam_https_admin_email=envParam['HTTPS_ADMIN_EMAIL']), default=envParam['HTTPS_ADMIN_EMAIL'], show_default=False)
 
         check_valid_email(input_email)
-        env["HTTPS_ADMIN_EMAIL"] = input_email
+        envParam["HTTPS_ADMIN_EMAIL"] = input_email
         save_progress('env', {'HTTPS_DOMAIN': input_domain, 'HTTPS_ADMIN_EMAIL': input_email})
 
         typer.echo(_("The system will now attempt to setup an HTTPS certificate for this server."))
