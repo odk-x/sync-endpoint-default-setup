@@ -93,6 +93,7 @@ def run_cache_setup(envParam: Dict[str, str]) -> bool:
     typer.echo("")
 
     use_custom_password = typer.confirm(_("Do you want to use a custom LDAP administration password?"))
+
     if use_custom_password:
         typer.echo("")
         typer.echo(_("Please input the password to use for ldap admin"))
@@ -153,15 +154,15 @@ def check_valid_email(email):
     pattern = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
 
     if not (email!="" and re.match(pattern, email)):
-        typer.echo(f"Invalid email address: {email}")
-        typer.echo('Re-run this script with the correct email address.')
+        typer.echo(_("Invalid email address: {email}").format(email=email))
+        typer.echo(_("Re-run this script with the correct email address."))
         raise typer.Exit()
 
 def check_valid_domain(domain):
     pattern = r"^([A-Za-z0-9]\.|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9]\.){1,3}[A-Za-z]{2,6}$"
     if not (domain!="" and re.match(pattern, domain)):
-        typer.echo(f"Invalid domain: {domain}")
-        typer.echo('Re-run this script with the correct domain.')
+        typer.echo(_("Invalid domain: {domain}").format(domain=domain))
+        typer.echo(_("Re-run this script with the correct domain."))
         raise typer.Exit()
 
 def is_cache_present() -> bool:
@@ -260,7 +261,7 @@ def run_docker_builds():
         subprocess.run("docker build --pull -t odk/openldap openldap", shell=True, check=True)
         subprocess.run("docker build --pull -t odk/phpldapadmin phpldapadmin", shell=True, check=True)
     except subprocess.CalledProcessError:
-        typer.echo("Error pulling required docker images.")
+        typer.echo(_("Error pulling required docker images."))
         typer.echo("")
 
 def run_sync_endpoint_build():
@@ -269,7 +270,7 @@ def run_sync_endpoint_build():
                 cd sync-endpoint ; \
                 mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests", shell=True, check=True)
     except subprocess.CalledProcessError:
-        typer.echo("Error building sync endpoint.")
+        typer.echo(_("Error building sync endpoint."))
         typer.echo("")
 
 def deploy_stack(use_https: bool, env: Dict[str, str]):
@@ -284,7 +285,7 @@ def deploy_stack(use_https: bool, env: Dict[str, str]):
         else:
             subprocess.run("docker stack deploy -c docker-compose.yml syncldap", shell=True, check=True)
     except subprocess.CalledProcessError:
-        typer.echo("Error deploying stack.")
+        typer.echo(_("Error deploying stack."))
         typer.echo("")
 
 @app.callback(invoke_without_command=True)
