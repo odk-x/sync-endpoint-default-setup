@@ -11,6 +11,8 @@ env = {"HTTPS_DOMAIN":"odk-x.com", "HTTPS_ADMIN_EMAIL":"jesse@odk-x.com"}
 
 runner = CliRunner()
 
+app = typer.Typer()
+
 def test_run_cache_setup(mocker):
     """Test creation of cache file with provided inputs
     """
@@ -26,7 +28,6 @@ def test_run_cache_setup(mocker):
     # lambda to bind the env variable to the function invocation since typer
     # invoke can only call it with parameters passed via the test command line,
     # but we want to pass an actual python dictionary.
-    app = typer.Typer()
     app.callback(invoke_without_command=True)(lambda : jw.run_cache_setup(env))
 
     # Invoke the test application
@@ -50,6 +51,27 @@ def test_run_cache_setup(mocker):
 
     assert saved_env["HTTPS_DOMAIN"] == env["HTTPS_DOMAIN"]
     assert saved_env["HTTPS_ADMIN_EMAIL"] == env["HTTPS_ADMIN_EMAIL"]
+
+def test_check_valid_email():
+    # with invalid email address
+    app.callback(invoke_without_command=True)(lambda : jw.check_valid_email("invalid-email-odk-x"))
+    result = runner.invoke(app, input="valid-domain.com\n\n\ninvalid-email-odk-x\n\n")
+    print("Test run standard output:")
+    print(result.stdout)
+
+    # Validate script outputs
+    assert "Invalid email address: invalid-email-odk-x" in result.stdout
+    assert "Re-run this script with the correct email address." in result.stdout
+
+def test_check_valid_domain():
+    app.callback(invoke_without_command=True)(lambda : jw.check_valid_domain("invalid-domain"))
+    result = runner.invoke(app, input="invalid-domain\n\n\nvalid-email@odk-x.com\n\n")
+    print("Test run standard output:")
+    print(result.stdout)
+
+    # Validate script outputs
+    assert "Invalid domain: invalid-domain" in result.stdout
+    assert "Re-run this script with the correct domain." in result.stdout
 
 def test_support_for_french(mocker):
     mocker.patch('init-odkx-sync-endpoint.is_enforce_https', return_value=True)
