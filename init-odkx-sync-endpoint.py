@@ -37,7 +37,7 @@ except ValueError:
 
     if input_domain != "":
         domain = input_domain
-    
+
     print("")
 
     print("Enter the Docker Swarm stack name you'd like to use:")
@@ -55,7 +55,7 @@ except ValueError:
 
         if default_ldap_pwd != "":
             replaceInFile("ldap.env", r"^\s*LDAP_ADMIN_PASSWORD=.*$", "LDAP_ADMIN_PASSWORD={}".format(default_ldap_pwd))
-            print("Password set to: {}".format(default_ldap_pwd))            
+            print("Password set to: {}".format(default_ldap_pwd))
 
     while True:
         print("Would you like to enforce HTTPS? We recommend yes.")
