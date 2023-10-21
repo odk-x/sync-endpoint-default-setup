@@ -18,7 +18,7 @@ def run_interactive_config():
     env_file_location = os.path.join(os.path.dirname(__file__), "config", "https.env")
 
     try:
-        env = parse_env_file(env_file_location)
+        env, domain, email = parse_env_file(env_file_location)
         print("Found configuration at {}".format(env_file_location))
     except OSError:
         print("No default https configuration file found at expected path {}. This prevents automatically renewing certs!".format(env_file_location))
@@ -31,10 +31,10 @@ def run_interactive_config():
     time.sleep(1)
     print("")
     print("Please input the domain name you will use for this installation. A valid domain name is required for HTTPS without distributing custom certificates.")
-    input_domain = input("domain [({})]:".format(env["HTTPS_DOMAIN"]))
+    input_domain = input("domain [({})]:".format(domain))
 
     if input_domain != "":
-        env["HTTPS_DOMAIN"] = input_domain
+        domain = input_domain
 
     print("")
     use_custom_password = input("Do you want to use a custom LDAP administration password (y/N)?")
@@ -69,10 +69,10 @@ def run_interactive_config():
     print("Enforcing https:", enforce_https)
     if enforce_https:
         print("Please provide an admin email for security updates with HTTPS registration")
-        input_email = input("admin email [({})]:".format(env["HTTPS_ADMIN_EMAIL"]))
+        input_email = input("admin email [({})]:".format(email))
 
         if input_email != "":
-            env["HTTPS_ADMIN_EMAIL"] = input_email
+            email = input_email
 
         print("The system will now attempt to setup an HTTPS certificate for this server.")
         print("For this to work you must have already have purchased/acquired a domain name (or subdomain) and setup a DNS A or AAAA record to point at this server's IP address.")
@@ -119,9 +119,9 @@ def run_interactive_config():
             env['CERT_PRIVKEY_PATH'] = cert_privkey_path
 
         print("Attempting to save updated https configuration")
-        write_to_env_file(env_file_location, env)
+        write_to_env_file(env_file_location, env, domain, email)
 
-    return (enforce_https, env)
+    return (enforce_https, env, domain, email)
 
 
 def replaceInFile(file_path, pattern, subst):
@@ -135,7 +135,7 @@ def replaceInFile(file_path, pattern, subst):
     move(abs_path, file_path)
 
 
-def write_to_env_file(filepath, env: dict):
+def write_to_env_file(filepath, env: dict, domain_name, email):
     """A janky in-memory file write.
 
     This is not atomic and would use lots of ram for large files.
@@ -143,10 +143,16 @@ def write_to_env_file(filepath, env: dict):
     with open(filepath, mode="w") as f:
         for (key, val) in env.items():
             f.write("{}={}\n".format(key, val))
-
+            if line.startswith("HTTPS_DOMAIN="):
+                line = "HTTPS_DOMAIN={}\n".format(domain_name)
+            if line.startswith("HTTPS_ADMIN_EMAIL="):
+                line = "HTTPS_ADMIN_EMAIL={}\n".format(email)
+            f.write(line)
 
 def parse_env_file(filepath):
     env = {}
+    domain = None
+    email = None
     with open(filepath) as f:
         for line in f:
             try:
@@ -154,7 +160,7 @@ def parse_env_file(filepath):
             except Exception:
                 continue
             env[key] = val.strip()
-    return env
+    return (env, domain, email)
 
 
 def run_docker_builds():
@@ -170,7 +176,7 @@ def run_sync_endpoint_build():
                mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests")
 
 
-def deploy_stack(use_https, env):
+def deploy_stack(use_https, env, domain, email):
     if use_https:
         is_certbot = 'CERT_FULLCHAIN_PATH' not in env
         config = 'docker-compose-https-certbot.yml' if is_certbot else 'docker-compose-https.yml'
@@ -183,7 +189,7 @@ def deploy_stack(use_https, env):
 
 
 if __name__ == "__main__":
-    https, env = run_interactive_config()
+    https, env, domain, email = run_interactive_config()
     run_docker_builds()
     run_sync_endpoint_build()
-    deploy_stack(https, env)
+    deploy_stack(https, env, domain, email)
