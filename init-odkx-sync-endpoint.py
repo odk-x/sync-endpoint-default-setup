@@ -14,7 +14,7 @@ from shutil import move, copymode
 from os import fdopen, remove, path
 from xml import dom
 
-def run_interactive_config():
+def run_interactive_config(env):
     env_file_location = os.path.join(os.path.dirname(__file__), "config", "https.env")
 
     try:
@@ -140,14 +140,14 @@ def write_to_env_file(filepath, env: dict, domain_name, email):
 
     This is not atomic and would use lots of ram for large files.
     """
+    # Update the environment variables in the 'env' dictionary
+    env['HTTPS_DOMAIN'] = domain_name
+    env['HTTPS_ADMIN_EMAIL'] = email
+    
     with open(filepath, mode="w") as f:
         for (key, val) in env.items():
-            f.write("{}={}\n".format(key, val))
-            if line.startswith("HTTPS_DOMAIN="):
-                line = "HTTPS_DOMAIN={}\n".format(domain_name)
-            if line.startswith("HTTPS_ADMIN_EMAIL="):
-                line = "HTTPS_ADMIN_EMAIL={}\n".format(email)
-            f.write(line)
+            f.write(f"{key}={val}\n")
+            
 
 def parse_env_file(filepath):
     env = {}
@@ -160,7 +160,7 @@ def parse_env_file(filepath):
             except Exception:
                 continue
             env[key] = val.strip()
-    return (env, domain, email)
+    return env
 
 
 def run_docker_builds():
@@ -189,7 +189,14 @@ def deploy_stack(use_https, env, domain, email):
 
 
 if __name__ == "__main__":
-    https, env, domain, email = run_interactive_config()
+    # Initialize the 'env' dictionary with default values
+    env = {
+        "HTTPS_DOMAIN": "default_domain",
+        "HTTPS_ADMIN_EMAIL": "default_email",
+        # Add other environment variables as needed
+    }
+    
+    https, env, domain, email = run_interactive_config(env)
     run_docker_builds()
     run_sync_endpoint_build()
     deploy_stack(https, env, domain, email)
