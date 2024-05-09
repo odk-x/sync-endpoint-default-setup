@@ -67,7 +67,7 @@ case ${DB_VAR} in
         DB_PORT=5432
         eval ${WAIT_CMD}
         docker exec ${DB_CONTAINER_ID} psql \
-            -c 'CREATE USER odk WITH UNENCRYPTED PASSWORD '\''odk'\'';' \
+            -c 'CREATE USER odk WITH PASSWORD '\''odk'\'';' \
             -c 'CREATE SCHEMA odk_sync AUTHORIZATION odk;' \
             -c 'GRANT ALL PRIVILEGES ON SCHEMA odk_sync TO odk;' \
             -U ${POSTGRES_USER} -d ${POSTGRES_DB}
@@ -96,7 +96,7 @@ echo "Done"
 echo "Checking Sync endpoint"
 
 # Wait 5 seconds for a 200 from Sync
-timeout -t 5 sh -c 'while ! echo -ne "GET / HTTP/1.1\nHost: sync\n\n" | nc -w 1 sync 8080 | grep -q "HTTP/1.1 200"; do echo '\''waiting for Sync'\''; sleep 1; done'
+timeout 5 sh -c 'while ! echo -ne "GET / HTTP/1.1\nHost: sync\n\n" | nc -w 1 sync 8080 | grep -q "HTTP/1.1 200"; do echo '\''waiting for Sync'\''; sleep 1; done'
 
 if [ $? -eq 143 ]; then
     echo "Timeout"

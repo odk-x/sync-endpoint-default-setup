@@ -1,3 +1,29 @@
+# sync-endpoint-default-setup
+
+## What is sync-endpoint-default-setup
+sync-endpoint-default-setup is a project that provides a default setup and configuration for the ODK-X Sync Endpoint. ODK-X is a suite of tools and services for data collection, management, and synchronization, often used for field data collection in research, humanitarian work, and other applications.
+
+## Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Build](#build)
+    - 2.1 [Using the init-odkx-sync-endpoint.py script](#using-the-init-odkx-sync-endpointpy-script)
+    - 2.2 [Manual Build Instructions](#manual-build-instructions)
+3. [Run](#run)
+4. [Clean up](#clean-up)
+5. [Configuration](#configuration)
+6. [LDAP](#ldap)
+    - 6.1 [Creating Users (with phpLDAPadmin)](#creating-users-with-phpldapadmin)
+    - 6.2 [Creating Groups (with phpLDAPadmin)](#creating-groups-with-phpldapadmin)
+    - 6.3 [Assigning Users to Groups (with phpLDAPadmin)](#assigning-users-to-groups-with-phpldapadmin)
+    - 6.4 [Using ldap-utils](#using-ldap-utils)
+7. [Advanced Configuration](#advanced-configuration)
+    - 7.1 [Using a Different Database or LDAP Directory](#using-a-different-database-or-ldap-directory)
+    - 7.2 [Managing Identity through DHIS2](#managing-identity-through-dhis2)
+8. [Warnings](#warnings)
+9. [Notes](#notes)
+10. [Ubuntu 18.04 Example Installation](#ubuntu-1804-example-installation)
+
 ## Prerequisites
 - Git
 - Docker (with swarm mode enabled)
@@ -82,7 +108,7 @@ The `ldap-service` container has `ldap-utils` installed. If you'd prefer, you ma
 
 #### Using a Different Database or LDAP directory 
 
-See [here](http://opendatakit-dev.cs.washington.edu/2_0_tools/release/current_release/cloud_endpoints).
+See [here](https://docs.odk-x.org/sync-endpoint/#using-a-different-ldap-ui).
 
 #### Managing Identity through DHIS2 
 
@@ -109,19 +135,41 @@ The phpLDAPadmin container is from [osixia/phpldapadmin](https://github.com/osix
 
 Refer to their respecitve documentations for usage information. 
 
-## Ubuntu 18.04 Example installation
-## To get setup on a clean installation of Ubuntu 18.04 run the following commands;
+## Ubuntu 22.04 Example installation
+## To get setup on a clean installation of Ubuntu 22.04:
+
+First add Docker's apt repository and install docker - see [Docker's documentation](https://docs.docker.com/engine/install/ubuntu/) and enable swarm mode
+```bash
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+docker swarm init
 ```
-user@localhost:~/# apt update
-user@localhost:~/# apt install docker.io
-user@localhost:~/# docker swarm init
-user@localhost:~/# apt install maven
-user@localhost:~/# apt install certbot
-user@localhost:~/# git clone https://github.com/odk-x/sync-endpoint-default-setup.git odkx
-user@localhost:~/# cd odkx
-user@localhost:~/odkx# python3 init-odkx-sync-endpoint.py
+Then install maven and certbot
+```bash
+sudo apt-get install maven certbot
+```
+Finally clone the default setup repo and run the initialization script with python
+
+```bash
+git clone https://github.com/odk-x/sync-endpoint-default-setup.git odkx
+cd odkx
+python3 init-odkx-sync-endpoint.py
  ```
-... then follow the on-screen instructions.
+... continue to follow the on-screen instructions.
 
 When everything has been built and started, you can open a browser and go to https://<your_domain>:40000 to access the LDAP admin interface.
 Log in with username = **cn=admin,dc=example,dc=org** and the password you defined during the intialization script. Then you can [create the ODK-X Sync Endpoint users according to the documentation](https://docs.odk-x.org/sync-endpoint/#creating-users).

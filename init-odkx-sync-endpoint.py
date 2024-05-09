@@ -165,7 +165,7 @@ def run_docker_builds():
 
 
 def run_sync_endpoint_build():
-    os.system("git clone -b master --single-branch --depth=1 https://github.com/odk-x/sync-endpoint ; \
+    os.system("git clone -b circleci-taketwo --single-branch --depth=1 https://github.com/odk-x/sync-endpoint ; \
                cd sync-endpoint ; \
                mvn -pl org.opendatakit:sync-endpoint-war,org.opendatakit:sync-endpoint-docker-swarm,org.opendatakit:sync-endpoint-common-dependencies clean install -DskipTests")
 

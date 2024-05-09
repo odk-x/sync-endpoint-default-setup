@@ -23,7 +23,7 @@ services:
     env_file:
       - ldap.env
   db:
-    image: postgres:9.6
+    image: postgres:12.17
     deploy:
       replicas: 1
     networks:
@@ -75,7 +75,7 @@ services:
       - org.opendatakit.sync-web-ui.application.properties
 
   nginx:
-    image: nginx:1.21.3
+    image: nginx:1.25.4
     networks:
       - sync-network
     ports:
