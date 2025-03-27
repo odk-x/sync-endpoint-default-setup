@@ -52,7 +52,7 @@ services:
       - db.env
       - sync.env
   sync:
-    image: odk/sync-endpoint
+    image: odk/sync-endpoint:latest
     networks:
       - ldap-network
       - db-network
@@ -75,7 +75,7 @@ services:
       - org.opendatakit.sync-web-ui.application.properties
 
   nginx:
-    image: nginx:1.25.4
+    image: nginx:1.27.4
     networks:
       - sync-network
     ports:
@@ -89,6 +89,14 @@ services:
       - source: com.nginx.proxy_buffer.conf
         target: /etc/nginx/conf.d/proxy_buffer.conf
 
+  odkx-legunzip:
+    image: odkx-legunzip:latest
+    networks:
+      - sync-network
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+          
 networks:
   ldap-network:
     driver: overlay
