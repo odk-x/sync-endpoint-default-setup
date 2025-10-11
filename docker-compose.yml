@@ -88,15 +88,15 @@ services:
         target: /etc/nginx/conf/sync-endpoint-locations.conf
       - source: com.nginx.proxy_buffer.conf
         target: /etc/nginx/conf.d/proxy_buffer.conf
-
-  odkx-legunzip:
-    image: odkx-legunzip:latest
+  
+  gogunzy:
+    image: gogunzy
     networks:
       - sync-network
     ports:
       - "8000:8000"
     restart: unless-stopped
-          
+
 networks:
   ldap-network:
     driver: overlay
