@@ -1,5 +1,5 @@
-#!/bin/sh -u
-
+#!/bin/sh
+set -u
 set -o pipefail
 
 echo "ODK-X Sync-Endpoint Database Bootstrap Script"
